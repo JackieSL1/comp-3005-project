@@ -1,5 +1,6 @@
 drop table if exists competitions cascade;
 drop table if exists seasons cascade;
+
 create table if not exists competitions (
 	competition_id int not null primary key,
 	country_name varchar(30) not null, -- TODO: Reference countries

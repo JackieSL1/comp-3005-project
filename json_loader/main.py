@@ -13,6 +13,52 @@ SEASONS: list[str] = [
     "2003/2004",
 ]
 
+# TODO: Could move this to a separate config file for easier modification 
+# (doesn't really matter though)
+
+# NOTE: When adding a new table, add its columns here
+COLUMNS = {
+    "competitions": (
+        "competition_id",
+        "country_name",
+        "competition_name",
+        "competition_gender",
+        "competition_youth",
+        "competition_international",
+    ),
+    "seasons": (
+        "season_id",
+        "season_name",
+        "competition_id",
+    )
+}
+
+# TODO: Delete before submission
+""" SCRATCH PAD
+Tables:
+seasons
+countries
+managers
+competition_stages
+stadiums
+referees
+matches
+teams
+team_managers
+position
+players
+
+"""
+
+def insert(cursor, table, tuples):
+    columns = COLUMNS[table]
+
+    for record in tuples:
+        cursor.execute(f"""
+                        INSERT INTO {table} ({', '.join(columns)})
+                        VALUES ({', '.join(['%s'] * len(columns))})
+                        """, record)
+
 
 
 def main():
@@ -22,10 +68,13 @@ def main():
 
     with psycopg.connect(f"dbname={DATABASE} user={USERNAME} password={PASSWORD}") as conn:
         with conn.cursor() as cursor:
-            cursor.execute("delete from competitions")
             competition_ids = set()
             competition_tuples = []
             season_tuples = []
+
+            # TODO: This shouldn't be run everytime - remove when script is done
+            with open("./ddl.sql", 'r') as ddl:
+                cursor.execute(ddl.read()) # type: ignore
 
             with open(f"{DATA_PATH}competitions.json", "r") as f:
                 data = json.load(f)
@@ -48,31 +97,13 @@ def main():
                         competition_ids.add(row['competition_id'])
 
                     season_tuples.append((
-                                   row['season_id'],
-                                   row['season_name'],
-                                   row['competition_id'],
+                        row['season_id'],
+                        row['season_name'],
+                        row['competition_id'],
                     ))
 
-            for competition in competition_tuples:
-                cursor.execute("""
-                            INSERT INTO competitions (
-                                competition_id,
-                                country_name,
-                                competition_name,
-                                competition_gender,
-                                competition_youth,
-                                competition_international
-                            ) VALUES (%s, %s, %s, %s, %s, %s)
-                        """, competition)
-
-            for season in season_tuples:
-                cursor.execute("""
-                            INSERT INTO seasons (
-                                season_id,
-                                season_name,
-                                competition_id
-                            ) VALUES (%s, %s, %s)
-                        """, season)
+            insert(cursor, "competitions",  competition_tuples)
+            insert(cursor, "seasons",  season_tuples)
 
 
             # Build list of json files with matches data
