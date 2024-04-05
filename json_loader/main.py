@@ -177,7 +177,6 @@ def main():
                     #     row['competition_id'],
                     # ))
 
-            insert(cursor, "competitions",  competition_tuples)
             # insert(cursor, "seasons",  season_tuples) 
 
             # Build list of json files with matches data
@@ -351,7 +350,8 @@ def main():
 
                             # TODO: Add positions and cards from "lineups"
 
-
+            # Insert all data
+            insert(cursor, "competitions",  competition_tuples)
             insert(cursor, "countries",  remove_duplicates_from_tuples(country_tuples))
             insert(cursor, "competition_stages",  remove_duplicates_from_tuples(competition_stage_tuples))
             insert(cursor, "stadiums",  remove_duplicates_from_tuples(stadium_tuples))
