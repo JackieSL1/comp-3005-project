@@ -95,19 +95,6 @@ create table if not exists team_managers (
 	manager_id int references managers(manager_id)
 );
 
--- create table if not exists position (
--- 	position_id int primary key,
---     position varchar(50) not null,
---     from varchar(10) not null, -- This might need to be a time
---     to varchar(10),
---     from_period int not null,
---     to_period int,
---     start_reason varchar(20) not null,
---     end_reason  varchar(20) not null
--- );
-
--- create table if not exists cards
-
 create table if not exists players (
 	player_id int primary key,
 	player_name varchar(80) not null,
@@ -116,8 +103,30 @@ create table if not exists players (
 	country int references countries(country_id)
 );
 
+create table if not exists cards (
+	player_id int references players(player_id),
+	match_id int references matches(match_id),
+	time varchar(30),
+	card_type varchar(30),
+	reason varchar(30),
+	"period" int
+);
+
+create table if not exists positions (
+	player_id int references players(player_id),
+	match_id int references matches(match_id),
+	position_id int,
+    "position" varchar(50) not null,
+    "from" varchar(10) not null, -- This might need to be a time
+    "to" varchar(10),
+    from_period int not null,
+    to_period int,
+    start_reason varchar(40) not null,
+    end_reason  varchar(40) not null
+);
+
 create table if not exists lineups (
 	match_id int references matches(match_id),
 	team_id int references teams(team_id),
 	player_id int references players(player_id)
-)
+);
