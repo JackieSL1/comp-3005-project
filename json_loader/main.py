@@ -1,4 +1,4 @@
-import psycopg
+import psycopg 
 import json
 import os
 
@@ -103,10 +103,13 @@ COLUMNS = {
         "period",
     ),
     "positions": (
+        "position_id",
+        "position",
+    ),
+    "player_positions": (
         "player_id",
         "match_id",
         "position_id",
-        "position",
         "\"from\"",
         "\"to\"",
         "from_period",
@@ -341,6 +344,7 @@ def main():
             player_tuples = []
             card_tuples = []
             position_tuples = []
+            player_position_tuples = []
 
             for path in lineups_paths:
                 with open(path, "r", encoding = "utf-8") as f:
@@ -381,10 +385,14 @@ def main():
 
                             for position in player["positions"]:
                                 position_tuples.append((
+                                    position["position_id"], 
+                                    position["position"],
+                                ))
+
+                                player_position_tuples.append((
                                     player["player_id"],
                                     match_id,
-                                    position["position_id"], # TODO: Could split positions off into a different table with this as primary key
-                                    position["position"],
+                                    position["position_id"], 
                                     position["from"],
                                     position["to"],
                                     position["from_period"],
@@ -392,9 +400,6 @@ def main():
                                     position["start_reason"],
                                     position["end_reason"],
                                 ))
-
-
-                            # TODO: Add positions and cards from "lineups"
 
             # Insert all data
             insert(cursor, "competitions",  competition_tuples)
@@ -409,7 +414,8 @@ def main():
             insert(cursor, "players",  remove_duplicates_from_tuples(player_tuples))
             insert(cursor, "lineups",  lineup_tuples)
             insert(cursor, "cards",  card_tuples)
-            insert(cursor, "positions",  position_tuples)
+            insert(cursor, "positions",  remove_duplicates_from_tuples(position_tuples))
+            insert(cursor, "player_positions",  player_position_tuples)
 
 if __name__ == "__main__":
     main()

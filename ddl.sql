@@ -1,17 +1,17 @@
 drop table if exists 
-competitions,
-countries,
-managers,
-competition_stages,
-stadiums,
-referees,
-matches,
-teams,
-team_managers,
-cards,
-positions,
-players,
-lineups,
+	competitions,
+	countries,
+	managers,
+	competition_stages,
+	stadiums,
+	referees,
+	matches,
+	teams,
+	team_managers,
+	cards,
+	positions,
+	players,
+	lineups
 cascade;
 
 create table if not exists competitions (
@@ -113,10 +113,14 @@ create table if not exists cards (
 );
 
 create table if not exists positions (
+	position_id int primary key,
+    "position" varchar(50) not null
+);
+
+create table if not exists player_positions (
 	player_id int references players(player_id),
 	match_id int references matches(match_id),
-	position_id int,
-    "position" varchar(50) not null,
+	position_id int references positions(position_id),
     "from" varchar(10) not null, -- This might need to be a time
     "to" varchar(10),
     from_period int not null,
@@ -128,5 +132,11 @@ create table if not exists positions (
 create table if not exists lineups (
 	match_id int references matches(match_id),
 	team_id int references teams(team_id),
+	player_id int references players(player_id)
+);
+
+create table if not exists events (
+	id uuid primary key,
+	match_id int references matches(match_id),
 	player_id int references players(player_id)
 );
