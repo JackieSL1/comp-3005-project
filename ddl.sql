@@ -1,18 +1,21 @@
-drop table if exists 
-	competitions,
-	countries,
-	managers,
-	competition_stages,
-	stadiums,
-	referees,
-	matches,
-	teams,
-	team_managers,
-	cards,
-	positions,
-	players,
-	lineups
-cascade;
+-- drop table if exists 
+-- 	competitions,
+-- 	countries,
+-- 	managers,
+-- 	competition_stages,
+-- 	stadiums,
+-- 	referees,
+-- 	matches,
+-- 	teams,
+-- 	team_managers,
+-- 	cards,
+-- 	positions,
+-- 	player_positions,
+-- 	players,
+-- 	lineups,
+-- 	events,
+-- 	shots
+-- cascade;
 
 create table if not exists competitions (
 	competition_id int not null,
@@ -138,5 +141,29 @@ create table if not exists lineups (
 create table if not exists events (
 	id uuid primary key,
 	match_id int references matches(match_id),
-	player_id int references players(player_id)
+	player_id int references players(player_id),
+	index int,
+	period int,
+	timestamp varchar(20), -- TODO: timestamp type instead?
+	minute int,
+	second int
+-- 	type int references event_types(event_type_id),
+-- 	posession int,
+-- 	posession_team int references teams(team_id),
+-- 	play_pattern int references play_patterns(play_pattern_id),
+-- 	team int references teams(team_id),
+-- 	player int references players(player_id),
+-- 	position int references positions(position_id),
+-- 	location,
+-- 	duration real,
+-- 	shot,
+-- 	under_pressure,
+-- 	out,
+-- 	off_camera
+-- 	type int references event_types(event_type_id)
+);
+
+create table if not exists shots (
+	match_id uuid references events(id),
+	statsbomb_xg double precision
 );
