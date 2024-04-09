@@ -1,21 +1,23 @@
--- drop table if exists 
--- 	competitions,
--- 	countries,
--- 	managers,
--- 	competition_stages,
--- 	stadiums,
--- 	referees,
--- 	matches,
--- 	teams,
--- 	team_managers,
--- 	cards,
--- 	positions,
--- 	player_positions,
--- 	players,
--- 	lineups,
--- 	events,
--- 	shots
--- cascade;
+drop table if exists 
+	competitions,
+	countries,
+	managers,
+	competition_stages,
+	stadiums,
+	referees,
+	matches,
+	teams,
+	team_managers,
+	cards,
+	positions,
+	player_positions,
+	players,
+	lineups,
+	event_types,
+	play_patterns,
+	events,
+	shots
+cascade;
 
 create table if not exists competitions (
 	competition_id int not null,
@@ -117,7 +119,7 @@ create table if not exists cards (
 
 create table if not exists positions (
 	position_id int primary key,
-    "position" varchar(50) not null
+    position varchar(50) not null
 );
 
 create table if not exists player_positions (
@@ -138,32 +140,37 @@ create table if not exists lineups (
 	player_id int references players(player_id)
 );
 
+create table if not exists event_types (
+	event_type_id int primary key,
+	name varchar(30)
+);
+
+create table if not exists play_patterns (
+	play_pattern_id int primary key,
+	name varchar(30)
+);
+
 create table if not exists events (
 	id uuid primary key,
 	match_id int references matches(match_id),
-	player_id int references players(player_id),
 	index int,
 	period int,
 	timestamp varchar(20), -- TODO: timestamp type instead?
 	minute int,
-	second int
--- 	type int references event_types(event_type_id),
--- 	posession int,
--- 	posession_team int references teams(team_id),
--- 	play_pattern int references play_patterns(play_pattern_id),
--- 	team int references teams(team_id),
--- 	player int references players(player_id),
--- 	position int references positions(position_id),
--- 	location,
--- 	duration real,
--- 	shot,
--- 	under_pressure,
--- 	out,
--- 	off_camera
--- 	type int references event_types(event_type_id)
+	second int,
+	event_type_id int references event_types(event_type_id),
+	posession int,
+	posession_team_id int references teams(team_id),
+	play_pattern_id int references play_patterns(play_pattern_id),
+	team_id int references teams(team_id),
+	player_id int references players(player_id),
+	position int references positions(position_id),
+	location_x int,
+	location_y int,
+	duration real
 );
 
 create table if not exists shots (
-	match_id uuid references events(id),
+	event_id uuid references events(id),
 	statsbomb_xg double precision
 );

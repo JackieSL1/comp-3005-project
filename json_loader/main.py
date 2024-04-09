@@ -118,6 +118,14 @@ COLUMNS = {
         "start_reason",
         "end_reason",
     ),
+    "event_types": (
+        "event_type_id",
+        "name",
+    ),
+    "play_patterns": (
+        "play_pattern_id",
+        "name",
+    ),
     "events": (
         "id",
         "match_id",
@@ -126,10 +134,19 @@ COLUMNS = {
         "timestamp",
         "minute",
         "second",
+        "event_type_id",
+        "posession",
+        "posession_team_id",
+        "play_pattern_id",
+        "team_id",
         "player_id",
+        "position",
+        "location_x",
+        "location_y",
+        "duration",
     ),
     "shots": (
-        "match_id",
+        "event_id",
         "statsbomb_xg",
     )
 }
@@ -171,6 +188,28 @@ def remove_duplicates_from_tuples(tuples: list[tuple]):
 
     return filter(unique, tuples)
 
+def build_tuple_from_json(json: dict, keys: list) -> tuple:
+    result = []
+
+    for key in keys:
+        if type(key) == str:
+            # If key is a single string, extract that value
+            result.append(json.get(key))
+        else:
+            # Otherwise the key should be a list of keys - iterate to find nested value
+            value = json
+            for nested_key in key:
+                value = value.get(nested_key)
+                if value is None:
+                    break
+
+            result.append(value)
+
+    return tuple(result)
+
+
+
+
 def main():
     if not os.path.isdir(DATA_PATH):
         raise Exception(f"error: Couldn't find open-data at \"{DATA_PATH}\". Make sure it's been added to the project's root directory")
@@ -189,33 +228,25 @@ def main():
 
             with open(f"{DATA_PATH}competitions.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
-                for row in data:
+                for competition in data:
 
                     # Skip data related to other seasons
-                    if row['season_name'] not in SEASONS:
+                    if competition['season_name'] not in SEASONS:
                         continue
 
-                    competition_tuples.append((
-                        row['competition_id'],
-                        row['season_id'],
-                        row['season_name'],
-                        row['country_name'],
-                        row['competition_name'],
-                        row['competition_gender'],
-                        row['competition_youth'],
-                        row['competition_international'],
-                    ))
+                    competition_tuples.append(build_tuple_from_json(competition, (
+                        'competition_id',
+                        'season_id',
+                        'season_name',
+                        'country_name',
+                        'competition_name',
+                        'competition_gender',
+                        'competition_youth',
+                        'competition_international',
+                    )))
 
-                    competition_ids.add(row['competition_id'])
-                    season_ids.add(row['season_id'])
-
-                    # season_tuples.append((
-                    #     row['season_id'],
-                    #     row['season_name'],
-                    #     row['competition_id'],
-                    # ))
-
-            # insert(cursor, "seasons",  season_tuples) 
+                    competition_ids.add(competition['competition_id'])
+                    season_ids.add(competition['season_id'])
 
             # Build list of json files with matches data
             matches_paths = []
@@ -421,8 +452,10 @@ def main():
             for id in match_ids:
                 events_paths.append(f"{DATA_PATH}events/{id}.json")
 
-            event_tuples = []
-            shot_tuples = []
+            events = []
+            shots = []
+            play_patterns = []
+            event_types = []
 
             for path in events_paths:
                 with open(path, "r", encoding = "utf-8") as f:
@@ -431,34 +464,28 @@ def main():
                     for event in data:
                         match_id = path.split("/")[-1].split(".")[0]
 
-                        # event_tuples.append((
-                        #     event["id"],
-                        #     match_id,
-                        #     event["index"],
-                        #     event["period"],
-                        #     event["timestamp"],
-                        #     event["minute"],
-                        #     event["second"],
-                        #     event["type"],
-                        #     event["posession"],
-                        #     event["posession_team"],
-                        #     event["play_pattern"],
-                        #     event["team"],
-                        #     event["player"],
-                        #     event["position"],
-                        #     event["location"],
-                        #     event["duration"],
-                        #     event["shot"],
-                        #     event["under_pressure"],
-                        #     event["out"],
-                        #     event["off_camera"],
-                        # ))
+                        play_patterns.append((
+                            event["play_pattern"]["id"],
+                            event["play_pattern"]["name"],
+                        ))
 
-                        player = event.get("player")
-                        if player:
-                            player = player["id"]
+                        event_types.append((
+                            event["type"]["id"],
+                            event["type"]["name"],
+                        ))
 
-                        event_tuples.append((
+                        if event.get("position"):
+                            position_tuples.append((
+                                event["position"]["id"],
+                                event["position"]["name"],
+                            ))
+
+                        if event.get("location"):
+                            location_x, location_y = event.get("location")
+                        else:
+                            location_x, location_y = None, None
+
+                        events.append((
                             event["id"],
                             match_id,
                             event["index"],
@@ -466,33 +493,116 @@ def main():
                             event["timestamp"],
                             event["minute"],
                             event["second"],
-                            player,
+                            event["type"]["id"],
+                            event.get("possession"),
+                            event.get("possession_team", {}).get("id"),
+                            event.get("play_pattern", {}).get("id"),
+                            event.get("team", {}).get("id"),
+                            event.get("player", {}).get("id"),
+                            event.get("position", {}).get("id"),
+                            location_x,
+                            location_y,
+                            event.get("duriation"),
                         ))
-                        shot = event.get("shot")
 
-                        if shot is not None:
-                            shot_tuples.append((
-                                event["id"],
-                                shot["statsbomb_xg"],
-                            ))
+                        match event["type"]["name"]:
+                            case "Ball Recovery":
+                                pass
+                            case "Dispossessed":
+                                pass
+                            case "Duel":
+                                pass
+                            case "Camera On":
+                                pass
+                            case "Block":
+                                pass
+                            case "Offside":
+                                pass
+                            case "Clearance":
+                                pass
+                            case "Interception":
+                                pass
+                            case "Dribble":
+                                pass
+                            case "Shot":
+                                shot = event["shot"]
+                                shots.append((
+                                    event["id"],
+                                    shot["statsbomb_xg"],
+                                ))
+                            case "Pressure":
+                                pass
+                            case "Half Start":
+                                pass
+                            case "Substitution":
+                                pass
+                            case "Own Goal Against":
+                                pass
+                            case "Foul Won":
+                                pass
+                            case "Foul Committed":
+                                pass
+                            case "Goal Keeper":
+                                pass
+                            case "Bad Behaviour":
+                                pass
+                            case "Own Goal For":
+                                pass
+                            case "Player On":
+                                pass
+                            case "Player Off":
+                                pass
+                            case "Shield":
+                                pass
+                            case "Camera off":
+                                pass
+                            case "Pass":
+                                pass
+                            case "50/50":
+                                pass
+                            case "Half End":
+                                pass
+                            case "Starting XI":
+                                pass
+                            case "Tactical Shift":
+                                pass
+                            case "Error":
+                                pass
+                            case "Miscontrol":
+                                pass
+                            case "Dribbled Past":
+                                pass
+                            case "Injury Stoppage":
+                                pass
+                            case "Referee Ball-Drop":
+                                pass
+                            case "Ball Receipt*":
+                                pass
+                            case "Carry":
+                                pass
+                            case _:
+                                raise Exception("error: Event type " + event["type"]["name"] + " not recognized")
+
 
             # Insert all data
-            # insert(cursor, "competitions",  competition_tuples)
-            # insert(cursor, "countries",  remove_duplicates_from_tuples(country_tuples))
-            # insert(cursor, "competition_stages",  remove_duplicates_from_tuples(competition_stage_tuples))
-            # insert(cursor, "stadiums",  remove_duplicates_from_tuples(stadium_tuples))
-            # insert(cursor, "referees",  remove_duplicates_from_tuples(referee_tuples))
-            # insert(cursor, "teams",  remove_duplicates_from_tuples(team_tuples))
-            # insert(cursor, "managers",  remove_duplicates_from_tuples(manager_tuples))
-            # insert(cursor, "team_managers",  remove_duplicates_from_tuples(team_manager_tuples))
-            # insert(cursor, "matches",  remove_duplicates_from_tuples(match_tuples))
-            # insert(cursor, "players",  remove_duplicates_from_tuples(player_tuples))
-            # insert(cursor, "lineups",  lineup_tuples)
-            # insert(cursor, "cards",  card_tuples)
-            # insert(cursor, "positions",  remove_duplicates_from_tuples(position_tuples))
-            # insert(cursor, "player_positions",  player_position_tuples)
-            insert(cursor, "events", event_tuples)
-            insert(cursor, "shots", shot_tuples)
+            insert(cursor, "competitions",  competition_tuples)
+            insert(cursor, "countries",  remove_duplicates_from_tuples(country_tuples))
+            insert(cursor, "competition_stages",  remove_duplicates_from_tuples(competition_stage_tuples))
+            insert(cursor, "stadiums",  remove_duplicates_from_tuples(stadium_tuples))
+            insert(cursor, "referees",  remove_duplicates_from_tuples(referee_tuples))
+            insert(cursor, "teams",  remove_duplicates_from_tuples(team_tuples))
+            insert(cursor, "managers",  remove_duplicates_from_tuples(manager_tuples))
+            insert(cursor, "team_managers",  remove_duplicates_from_tuples(team_manager_tuples))
+            insert(cursor, "matches",  remove_duplicates_from_tuples(match_tuples))
+            insert(cursor, "players",  remove_duplicates_from_tuples(player_tuples))
+            insert(cursor, "lineups",  lineup_tuples)
+            insert(cursor, "cards",  card_tuples)
+            insert(cursor, "positions",  remove_duplicates_from_tuples(position_tuples))
+            insert(cursor, "player_positions", remove_duplicates_from_tuples(player_position_tuples))
+            insert(cursor, "event_types", remove_duplicates_from_tuples(event_types))
+            insert(cursor, "play_patterns", remove_duplicates_from_tuples(play_patterns))
+            insert(cursor, "events", events)
+            insert(cursor, "shots", shots)
 
 
 if __name__ == "__main__":
