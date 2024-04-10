@@ -3,23 +3,34 @@ import json
 import os
 import time
 from constants import (
-    SEASONS, # TODO: Make sure this includes all seasons
+    SEASONS,
     COLUMNS,
     DATABASE,
     USERNAME,
     PASSWORD,
     DATA_PATH,
     EVENT_JSON_KEYS,
+    EVENT_JSON_TO_TABLE,
 )
 
 def insert(cursor, table, tuples):
     columns = COLUMNS[table]
 
     for record in tuples:
-        cursor.execute(f"""
-                        INSERT INTO {table} ({', '.join(columns)})
-                        VALUES ({', '.join(['%s'] * len(columns))})
-                        """, record)
+        try:
+            cursor.execute(f"""
+                            INSERT INTO {table} ({', '.join(columns)})
+                            VALUES ({', '.join(['%s'] * len(columns))})
+                            """, record)
+        except Exception as e:
+            print(f"""
+                   INSERT INTO {table} ({', '.join(columns)})
+                   VALUES ({', '.join(['%s'] * len(columns))})
+                   """)
+            print(record)
+            print(e)
+            breakpoint()
+            raise e
 
 def remove_duplicates_from_tuples(tuples: list[tuple]):
     seen_ids = set()
@@ -302,6 +313,8 @@ def main():
     events = []
     event_types = []
     event_tuples = {key : list() for key in EVENT_JSON_KEYS}
+    related_events = []
+    event_tactics = []
 
     print("Building events")
     for path in events_paths:
@@ -313,7 +326,7 @@ def main():
 
                 event_types.append((
                     event["type"]["id"],
-                    event["type"]["name"],
+                    EVENT_JSON_TO_TABLE[event["type"]["name"]],
                 ))
 
                 if event.get("position"):
@@ -350,25 +363,70 @@ def main():
                     event.get("out"),
                 ))
 
-                match event["type"]["name"]:
+                if event.get("related_events"):
+                    for related_event_id in event["related_events"]:
+                        related_events.append((
+                            event["id"],
+                            related_event_id, 
+                        ))
+
+
+                event_name = event["type"]["name"]
+                value = event.get(EVENT_JSON_TO_TABLE[event_name])
+
+                match event_name:
                     case "Ball Recovery":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                               event["id"],
+                               value.get("recovery_failure"), 
+                               value.get("offensive"), 
+                            ))
                     case "Dispossessed":
-                        pass
+                            # No extra fields
+                            pass
                     case "Duel":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                               event["id"],
+                               value.get("type", {}).get("name"), 
+                               value.get("outcome", {}).get("name"), 
+                            ))
                     case "Camera On":
+                        # TODO: Is this even an event?
                         pass
                     case "Block":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("deflection"),
+                                value.get("offensive"),
+                                value.get("save_block"),
+                            ))
                     case "Offside":
+                            # no fields
                         pass
                     case "Clearance":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("body_part", {}).get("name"),
+                            ))
                     case "Interception":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"),
+                            ))
                     case "Dribble":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"),
+                                value.get("overrun"),
+                                value.get("nutmeg"),
+                                value.get("no_touch"),
+                            ))
                     case "Shot":
                         shot = event["shot"]
                         location = shot.get("location")
@@ -388,7 +446,7 @@ def main():
                             location_z,
                             shot.get("key_pass_id"),
                             shot.get("body_part", {}).get("name"),
-                            shot["type"]["id"],
+                            shot.get("type", {}).get("name"),
                             shot.get("outcome", {}).get("name"),
                             shot.get("first_time"),
                             shot.get("technique", {}).get("name"),
@@ -402,55 +460,183 @@ def main():
                             shot.get("saved_off_target"),
                         ))
                     case "Pressure":
+                        # no fields
                         pass
                     case "Half Start":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("late_video_start"),
+                            ))
                     case "Substitution":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"), 
+                                value.get("replacement", {}).get("id"),
+                            ))
                     case "Own Goal Against":
+                        # no fields
                         pass
                     case "Foul Won":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("penalty"),
+                                value.get("defensive"),
+                                value.get("advantage"),
+                            ))
                     case "Foul Committed":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("type", {}).get("name"),
+                                value.get("penalty"),
+                                value.get("defensive"),
+                                value.get("card", {}).get("name"),
+                                value.get("offensive"),
+                            ))
                     case "Goal Keeper":
-                        pass
+                        if value:
+                            location_x, location_y = value.get("end_location", (None, None))
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"),
+                                value.get("technique", {}).get("name"),
+                                value.get("position", {}).get("name"),
+                                value.get("body_part", {}).get("name"),
+                                value.get("type", {}).get("name"),
+                                location_x,
+                                location_y,
+                                value.get("shot_saved_to_post"),
+                                value.get("punched_out"),
+                                value.get("success_in_play"),
+                                value.get("shot_saved_off_target"),
+                                value.get("lost_out"),
+                                value.get("lost_in_play"),
+                            ))
                     case "Bad Behaviour":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("card", {}).get("name"),
+                            ))
                     case "Own Goal For":
+                        # no fields
                         pass
                     case "Player On":
+                        # no fields
                         pass
                     case "Player Off":
+                        # no fields
                         pass
                     case "Shield":
+                        # no fields
                         pass
                     case "Camera off":
+                        # TODO: Is this even an event?
                         pass
                     case "Pass":
-                        pass
+                        if value:
+                            location_x, location_y = value.get("end_location", (None, None))
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("recipient", {}).get("id"),
+                                value.get("length"),
+                                value.get("angle"),
+                                value.get("height", {}).get("name"),
+                                location_x,
+                                location_y,
+                                value.get("body_part", {}).get("name"),
+                                value.get("type", {}).get("name"),
+                                value.get("outcome", {}).get("name"),
+                                value.get("aerial_won"),
+                                value.get("assisted_shot_id"),
+                                value.get("shot_assist"),
+                                value.get("switch"),
+                                value.get("cross"),
+                                value.get("deflected"),
+                                value.get("inswinging"),
+                                value.get("technique", {}).get("name"),
+                                value.get("through_ball"),
+                                value.get("no_touch"),
+                                value.get("outswinging"),
+                                value.get("miscommunication"),
+                                value.get("cut_back"),
+                                value.get("goal_assist"),
+                                value.get("straight"),
+                            ))
                     case "50/50":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"),
+                            ))
                     case "Half End":
+                        # no fields
                         pass
                     case "Starting XI":
-                        pass
+                        value = event.get("tactics")
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("formation"),
+                            ))
+
+                            for player in value.get("lineup"):
+                                event_tactics.append((
+                                    event["id"],
+                                    player["player"]["id"],
+                                    player["position"]["id"],
+                                    player["jersey_number"],
+                                ))
                     case "Tactical Shift":
-                        pass
+                        value = event.get("tactics")
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("formation"),
+                            ))
+
+                            for player in value.get("lineup"):
+                                event_tactics.append((
+                                    event["id"],
+                                    player["player"]["id"],
+                                    player["position"]["id"],
+                                    player["jersey_number"],
+                                ))
                     case "Error":
                         pass
                     case "Miscontrol":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("aerial_won"),
+                            ))
                     case "Dribbled Past":
                         pass
                     case "Injury Stoppage":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("in_chain"),
+                            ))
                     case "Referee Ball-Drop":
                         pass
                     case "Ball Receipt*":
-                        pass
+                        if value:
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                value.get("outcome", {}).get("name"),
+                            ))
                     case "Carry":
-                        pass
+                        if value:
+                            location_x, location_y = value.get("end_location", (None, None))
+                            event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
+                                event["id"],
+                                location_x,
+                                location_y,
+                            ))
                     case _:
                         raise Exception("error: Event type " + event["type"]["name"] + " not recognized")
 
@@ -478,11 +664,12 @@ def main():
             insert(cursor, "player_positions", remove_duplicates_from_tuples(player_position_tuples))
             insert(cursor, "event_types", remove_duplicates_from_tuples(event_types))
             insert(cursor, "events", events)
+            insert(cursor, "event_tactics", event_tactics)
+            insert(cursor, "related_events", related_events)
 
-            # for event_key in EVENT_JSON_KEYS.keys():
-            #     insert(cursor, event_key, event_tuples[event_key])
+            for event_key in EVENT_JSON_KEYS.keys():
+                insert(cursor, event_key, event_tuples[event_key])
 
-            insert(cursor, "shot", event_tuples["shot"])
 
 
 if __name__ == "__main__":

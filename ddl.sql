@@ -14,8 +14,44 @@ drop table if exists
 	players,
 	lineups,
 	event_types,
+	event_tactics,
+	related_events,
 	events,
-	shots
+	ball_recovery,
+	dispossessed,
+	duel,
+	camera_on,
+	block,
+	offside,
+	clearance,
+	interception,
+	dribble,
+	shot,
+	pressure,
+	half_start,
+	substitution,
+	own_goal_against,
+	foul_won,
+	foul_committed,
+	goalkeeper,
+	bad_behaviour,
+	own_goal_for,
+	player_on,
+	player_off,
+	shield,
+	camera_off,
+	pass,
+	fifty_fifty,
+	half_end,
+	starting_xi,
+	tactical_shift,
+	error,
+	miscontrol,
+	dribbled_past,
+	injury_stoppage,
+	referee_ball_drop,
+	ball_receipt,
+	carry
 cascade;
 
 create table if not exists competitions (
@@ -167,6 +203,25 @@ create table if not exists events (
 	out boolean
 );
 
+create table if not exists event_tactics (
+	event_id uuid references events(id),
+	player_id int references players(player_id),
+	position int references positions(position_id),
+	jersey_number int not null
+);
+
+create table if not exists related_events (
+	event_id uuid references events(id),
+	related_event_id uuid references events(id)
+);
+
+-- EVENT TYPES
+create table if not exists ball_recovery (
+	event_id uuid references events(id),
+	recovery_failure boolean,
+	offensive boolean
+);
+
 create table if not exists shot (
 	event_id uuid references events(id),
 	statsbomb_xg double precision,
@@ -175,7 +230,7 @@ create table if not exists shot (
 	end_location_z real,
 	key_pass_id uuid references events(id),
 	body_part varchar(30),
-	type int references event_types(event_type_id),
+	type varchar(30),
 	outcome varchar(30),
 	first_time boolean,
 	technique varchar(30),
@@ -187,4 +242,176 @@ create table if not exists shot (
 	open_goal boolean,
 	follows_dribble boolean,
 	saved_off_target boolean
+);
+
+-- create table if not exists dispossessed ( <- DOESN'T NEED EXTRA FIELDS
+-- 	event_id uuid references events(id),
+	
+-- );
+
+create table if not exists duel (
+	event_id uuid references events(id),
+	type varchar(30),
+	outcome varchar(30)
+);
+-- create table if not exists camera_on (
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists block (
+	event_id uuid references events(id),
+	deflection boolean,
+	offensive boolean,
+	save_block boolean
+);
+-- create table if not exists offside ( -- NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists clearance ( 
+	event_id uuid references events(id),
+	body_part varchar(20)
+);
+create table if not exists interception (
+	event_id uuid references events(id),
+	outcome varchar(30)
+);
+create table if not exists dribble (
+	event_id uuid references events(id),
+	outcome varchar(30),
+	overrun boolean,
+	nutmeg boolean,
+	no_touch boolean
+);
+-- create table if not exists pressure (
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists half_start (
+	event_id uuid references events(id),
+	late_video_start boolean
+);
+create table if not exists substitution (
+	event_id uuid references events(id),
+	outcome varchar(30),
+	replacement int references players(player_id)
+);
+-- create table if not exists own_goal_against ( NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists foul_won (
+	event_id uuid references events(id),
+	penalty boolean,
+    defensive boolean,
+    advantage boolean
+);
+create table if not exists foul_committed (
+	event_id uuid references events(id),
+	type varchar(30),
+	penalty boolean,
+    defensive boolean,
+    card varchar(20),
+    offensive boolean
+);
+create table if not exists goalkeeper (
+	event_id uuid references events(id),
+	outcome varchar(30),
+	technique varchar(30),
+	position varchar(20),
+	body_part varchar(30),
+	type varchar(30),
+	end_location_x int,
+	end_location_y int,
+	shot_saved_to_post boolean,
+	punched_out boolean,
+	success_in_play boolean,
+	shot_saved_off_target boolean,
+	lost_out boolean,
+	lost_in_play boolean
+);
+create table if not exists bad_behaviour (
+	event_id uuid references events(id),
+	card varchar(20)
+);
+-- create table if not exists own_goal_for (  NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+-- create table if not exists player_on (  NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+-- create table if not exists player_off (  NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+-- create table if not exists shield (  NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+-- create table if not exists camera_off ( TODO: what is this
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists pass (
+	event_id uuid references events(id),
+	recipient int references players(player_id),
+	length real,
+	angle real,
+	height varchar(20),
+	end_location_x real,
+	end_location_y real,
+	body_part varchar(20),
+	type varchar(20),
+	outcome varchar(20),
+	aerial_won boolean,
+	assisted_shot_id uuid references events(id),
+	shot_assist boolean,
+	switch boolean,
+	"cross" boolean,
+	deflected boolean,
+	inswinging boolean,
+	technique varchar(20),
+	through_ball boolean,
+	no_touch boolean,
+	outswinging boolean,
+	miscommunication boolean,
+	cut_back boolean,
+	goal_assist boolean,
+	straight boolean
+);
+create table if not exists fifty_fifty (
+	event_id uuid references events(id),
+	outcome varchar(30)
+);
+-- create table if not exists half_end ( NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists starting_xi (
+	event_id uuid references events(id),
+	formation int
+	-- NOTE: event_tactics should also be linked
+);
+create table if not exists tactical_shift (
+	event_id uuid references events(id),
+	formation int
+	-- NOTE: event_tactics should also be linked
+);
+-- create table if not exists error ( NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists miscontrol (
+	event_id uuid references events(id),
+	aerial_won boolean
+);
+-- create table if not exists dribbled_past ( NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists injury_stoppage (
+	event_id uuid references events(id),
+	in_chain boolean
+);
+-- create table if not exists referee_ball_drop ( NO FIELDS
+-- 	event_id uuid references events(id),
+-- );
+create table if not exists ball_receipt (
+	event_id uuid references events(id),
+	outcome varchar(30)
+);
+create table if not exists carry (
+	event_id uuid references events(id),
+	end_location_x real,
+	end_location_y real
 );
