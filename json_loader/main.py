@@ -381,7 +381,7 @@ def main():
                                 location_x, location_y, location_z = location
 
                         event_tuples["shot"].append((
-                            event,
+                            event["id"],
                             shot["statsbomb_xg"],
                             location_x,
                             location_y,
