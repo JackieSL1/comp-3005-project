@@ -14,7 +14,6 @@ drop table if exists
 	players,
 	lineups,
 	event_types,
-	play_patterns,
 	events,
 	shots
 cascade;
@@ -104,7 +103,6 @@ create table if not exists players (
 	player_id int primary key,
 	player_name varchar(80) not null,
 	player_nickname varchar(30),
-	jersey_number int not null,
 	country int references countries(country_id)
 );
 
@@ -137,16 +135,12 @@ create table if not exists player_positions (
 create table if not exists lineups (
 	match_id int references matches(match_id),
 	team_id int references teams(team_id),
-	player_id int references players(player_id)
+	player_id int references players(player_id),
+	jersey_number int not null
 );
 
 create table if not exists event_types (
 	event_type_id int primary key,
-	name varchar(30)
-);
-
-create table if not exists play_patterns (
-	play_pattern_id int primary key,
 	name varchar(30)
 );
 
@@ -161,16 +155,36 @@ create table if not exists events (
 	event_type_id int references event_types(event_type_id),
 	posession int,
 	posession_team_id int references teams(team_id),
-	play_pattern_id int references play_patterns(play_pattern_id),
+	play_pattern varchar(30),
 	team_id int references teams(team_id),
 	player_id int references players(player_id),
 	position int references positions(position_id),
-	location_x int,
-	location_y int,
-	duration real
+	location_x real,
+	location_y real,
+	duration real,
+	under_pressure boolean,
+	counterpress boolean,
+	out boolean
 );
 
-create table if not exists shots (
+create table if not exists shot (
 	event_id uuid references events(id),
-	statsbomb_xg double precision
+	statsbomb_xg double precision,
+	end_location_x real,
+	end_location_y real,
+	end_location_z real,
+	key_pass_id uuid references events(id),
+	body_part varchar(30),
+	type int references event_types(event_type_id),
+	outcome varchar(30),
+	first_time boolean,
+	technique varchar(30),
+	deflected boolean,
+	one_on_one boolean,
+	aerial_won boolean,
+	saved_to_post boolean,
+	redirect boolean,
+	open_goal boolean,
+	follows_dribble boolean,
+	saved_off_target boolean
 );
