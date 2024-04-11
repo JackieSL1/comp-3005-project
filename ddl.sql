@@ -415,3 +415,7 @@ create table if not exists carry (
 	end_location_x real,
 	end_location_y real
 );
+
+-- Indices
+create index match_index
+on matches(match_id);

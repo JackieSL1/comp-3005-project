@@ -1,12 +1,14 @@
-DATABASE: str = "testing"
+DATABASE: str = "project_database"
 USERNAME: str = "postgres"
-PASSWORD: str = "postgres"
+PASSWORD: str = "1234"
+HOST: str = "localhost"
+PORT: str = "5432"
 DATA_PATH: str = "./open-data/data/"
-SEASONS: list[str] = [
-    "2020/2021",
-    "2019/2020",
-    "2018/2019",
-    "2003/2004",
+SEASONS: list[tuple[str, str]] = [
+    ('La Liga', "2020/2021"),
+    ('La Liga', "2019/2020"),
+    ('La Liga', "2018/2019"),
+    ('Champions League', "2003/2004"),
 ]
 
 # NOTE: When adding a new table, add its columns here

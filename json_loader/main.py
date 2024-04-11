@@ -8,6 +8,8 @@ from constants import (
     DATABASE,
     USERNAME,
     PASSWORD,
+    PORT,
+    HOST,
     DATA_PATH,
     EVENT_JSON_KEYS,
     EVENT_JSON_TO_TABLE,
@@ -71,12 +73,7 @@ def main():
 
 
     competition_ids = set()
-    season_ids = set()
     competition_tuples = []
-
-    # TODO: This shouldn't be run everytime - remove when script is done
-    # with open("./ddl.sql", 'r') as ddl:
-    #     cursor.execute(ddl.read()) # type: ignore
 
     print("Building competitions")
     with open(f"{DATA_PATH}competitions.json", "r", encoding="utf-8") as f:
@@ -84,7 +81,7 @@ def main():
         for competition in data:
 
             # Skip data related to other seasons
-            if competition['season_name'] not in SEASONS:
+            if (competition['competition_name'], competition['season_name']) not in SEASONS:
                 continue
 
             competition_tuples.append(build_list_from_json(competition, (
@@ -98,18 +95,16 @@ def main():
                 'competition_international',
             )))
 
-            competition_ids.add(competition['competition_id'])
-            season_ids.add(competition['season_id'])
+            competition_ids.add((competition['competition_id'], competition['season_id']))
 
     print("Done")
 
     # Build list of json files with matches data
     matches_paths = []
-    for id in competition_ids:
-        with os.scandir(f"{DATA_PATH}matches/{id}") as dirs:
-            for path in dirs:
-                if int(path.name.split(".")[0]) in season_ids:
-                    matches_paths.append(path.path)
+    for competition, match in competition_ids:
+        matches_paths.append(f"{DATA_PATH}matches/{competition}/{match}.json")
+
+    print(matches_paths)
 
     country_tuples = []
     manager_tuples = []
@@ -645,7 +640,7 @@ def main():
     print("Inserting into database")
 
     # Insert all data
-    with psycopg.connect(f"dbname={DATABASE} user={USERNAME} password={PASSWORD}") as conn:
+    with psycopg.connect(f"dbname={DATABASE} user={USERNAME} password={PASSWORD} host={HOST} port={PORT}") as conn:
         with conn.cursor() as cursor:
 
             insert(cursor, "competitions",  competition_tuples)
