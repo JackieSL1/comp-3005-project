@@ -417,5 +417,24 @@ create table if not exists carry (
 );
 
 -- Indices
-create index match_index
+create index matches_index
 on matches(match_id);
+
+create index competitions_index
+on competitions(competition_id, season_id);
+
+create index player_id_index
+on players(player_id);
+
+create index player_name_index
+on players(player_name);
+
+create index team_id_index
+on teams(team_id);
+
+create index team_name_index
+on teams(team_name);
+
+create index events_index 
+on events(id);
+
