@@ -18,21 +18,19 @@ from constants import (
 def insert(cursor, table, tuples):
     columns = COLUMNS[table]
 
-    for record in tuples:
-        try:
-            cursor.execute(f"""
-                            INSERT INTO {table} ({', '.join(columns)})
-                            VALUES ({', '.join(['%s'] * len(columns))})
-                            """, record)
-        except Exception as e:
-            print(f"""
-                   INSERT INTO {table} ({', '.join(columns)})
-                   VALUES ({', '.join(['%s'] * len(columns))})
-                   """)
-            print(record)
-            print(e)
-            breakpoint()
-            raise e
+    # for record in tuples:
+    try:
+        cursor.executemany(f"""
+                        INSERT INTO {table} ({', '.join(columns)})
+                        VALUES ({', '.join(['%s'] * len(columns))})
+                        """, tuples)
+    except Exception as e:
+        print(f"""
+               INSERT INTO {table} ({', '.join(columns)})
+               VALUES ({', '.join(['%s'] * len(columns))})
+               """)
+        print(e)
+        raise e
 
 def remove_duplicates_from_tuples(tuples: list[tuple]):
     seen_ids = set()
@@ -424,21 +422,21 @@ def main():
                             ))
                     case "Shot":
                         shot = event["shot"]
-                        location = shot.get("location")
-                        location_z = None
+                        end_location = shot.get("end_location")
+                        end_location_x, end_location_y, end_location_z = None, None, None 
 
-                        if location:
-                            if len(location == 2):
-                                location_x, location_y = location
-                            if len(location == 3):
-                                location_x, location_y, location_z = location
+                        if end_location:
+                            if len(end_location) == 2:
+                                end_location_x, end_location_y = end_location
+                            if len(end_location) == 3:
+                                end_location_x, end_location_y, end_location_z = end_location
 
                         event_tuples["shot"].append((
                             event["id"],
                             shot["statsbomb_xg"],
-                            location_x,
-                            location_y,
-                            location_z,
+                            end_location_x,
+                            end_location_y,
+                            end_location_z,
                             shot.get("key_pass_id"),
                             shot.get("body_part", {}).get("name"),
                             shot.get("type", {}).get("name"),
@@ -533,15 +531,15 @@ def main():
                         pass
                     case "Pass":
                         if value:
-                            location_x, location_y = value.get("end_location", (None, None))
+                            end_location_x, end_location_y = value.get("end_location", (None, None))
                             event_tuples[EVENT_JSON_TO_TABLE[event_name]].append((
                                 event["id"],
                                 value.get("recipient", {}).get("id"),
                                 value.get("length"),
                                 value.get("angle"),
                                 value.get("height", {}).get("name"),
-                                location_x,
-                                location_y,
+                                end_location_x,
+                                end_location_y,
                                 value.get("body_part", {}).get("name"),
                                 value.get("type", {}).get("name"),
                                 value.get("outcome", {}).get("name"),
