@@ -8,7 +8,7 @@ SEASONS: list[tuple[str, str]] = [
     ('La Liga', "2020/2021"),
     ('La Liga', "2019/2020"),
     ('La Liga', "2018/2019"),
-    ('Champions League', "2003/2004"),
+    ('Premier League', "2003/2004"),
 ]
 
 # NOTE: When adding a new table, add its columns here
