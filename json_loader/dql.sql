@@ -239,10 +239,9 @@ where (
 	or season_name = '2018/2019'
 	)
 and competition_name = 'La Liga'
-and outcome = 'Goal'
-and (end_location_y between 36 and 38.7 
-	 or end_location_y between 41.3 and 44)
-and end_location_z between 1.3 and 2.7
+and (end_location_y between 36 and 38.67 
+	 or end_location_y between 41.33 and 44)
+and end_location_z between 1.34 and 2.67
 group by player_name
 order by count(s) desc
 );
