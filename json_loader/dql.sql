@@ -250,7 +250,8 @@ who shot the most in either the top-left or top-right corners. Sort them from hi
 2. In the La Liga season of 2020/2021, find the teams with the most successful passes into the box. Sort
 them from the highest to lowest.
 */
-select sum(passes) from (
+-- ASSUMPTION: A pass starting from inside the box counts
+select sum(passes_into_the_box) passes_into_the_box from (
 select team_name, count(p) passes_into_the_box from competitions c
 join matches m
 on m.season_id = c.season_id
@@ -264,7 +265,8 @@ on t.team_id = e.team_id
 where season_name = '2020/2021'
 and competition_name = 'La Liga'
 and outcome is null
-and p.end_location_x between 80 and 100
-and p.end_location_y between 26.6 and 53.3
+and (p.end_location_x between 102 and 120
+	 or p.end_location_x between 0 and 18)
+and p.end_location_y between 18 and 62
 group by team_name
 order by count(p) desc);
