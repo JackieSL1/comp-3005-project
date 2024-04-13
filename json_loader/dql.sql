@@ -222,58 +222,58 @@
 bottom-right). In the La Liga seasons of 2020/2021, 2019/2020, and 2018/2019 combined, find the players
 who shot the most in either the top-left or top-right corners. Sort them from highest to lowest.
 */
--- select sum(shots) from (
--- select player_name, count(s) as shots from competitions c
--- inner join matches m
--- on c.competition_id = m.competition_id
--- and c.season_id = m.season_id
--- inner join events e
--- on m.match_id = e.match_id 
--- inner join players p
--- on e.player_id = p.player_id
--- inner join shot s
--- on e.id = s.event_id
--- where (
--- 	season_name = '2020/2021'
--- 	or season_name = '2019/2020'
--- 	or season_name = '2018/2019'
--- 	)
--- and competition_name = 'La Liga'
--- and (end_location_y between 36 and 38.67 
--- 	 or end_location_y between 41.33 and 44)
--- and end_location_z between 1.34 and 2.67
--- group by player_name
--- order by count(s) desc
--- );
+select sum(shots) from (
+select player_name, count(s) as shots from competitions c
+inner join matches m
+on c.competition_id = m.competition_id
+and c.season_id = m.season_id
+inner join events e
+on m.match_id = e.match_id 
+inner join players p
+on e.player_id = p.player_id
+inner join shot s
+on e.id = s.event_id
+where (
+	season_name = '2020/2021'
+	or season_name = '2019/2020'
+	or season_name = '2018/2019'
+	)
+and competition_name = 'La Liga'
+and (end_location_y between 36 and 38.67 
+	 or end_location_y between 41.33 and 44)
+and end_location_z between 1.34 and 2.67
+group by player_name
+order by count(s) desc
+);
 
 /*
 2. In the La Liga season of 2020/2021, find the teams with the most successful passes into the box. Sort
 them from the highest to lowest.
 */
 -- ASSUMPTIONS: A pass has to start outside of the box, and team doesn't matter
-select team_name, count(p) passes_into_the_box from competitions c
-join matches m
-on m.season_id = c.season_id
-and m.competition_id = m.competition_id
-join events e
-on e.match_id = m.match_id
-join pass p
-on p.event_id = e.id
-join teams t
-on t.team_id = e.team_id
-where season_name = '2020/2021'
-and competition_name = 'La Liga'
-and outcome is null
-and NOT ((
-		e.location_x between 102 and 120
-		or e.location_x between 0 and 18
-	)
-	and e.location_y between 18 and 62
-)
-and (
-	p.end_location_x between 102 and 120
-	or p.end_location_x between 0 and 18
-	)
-and p.end_location_y between 18 and 62
-group by team_name
-order by count(p) desc;
+-- select team_name, count(p) passes_into_the_box from competitions c
+-- join matches m
+-- on m.season_id = c.season_id
+-- and m.competition_id = m.competition_id
+-- join events e
+-- on e.match_id = m.match_id
+-- join pass p
+-- on p.event_id = e.id
+-- join teams t
+-- on t.team_id = e.team_id
+-- where season_name = '2020/2021'
+-- and competition_name = 'La Liga'
+-- and outcome is null
+-- and NOT ((
+-- 		e.location_x between 102 and 120
+-- 		or e.location_x between 0 and 18
+-- 	)
+-- 	and e.location_y between 18 and 62
+-- )
+-- and (
+-- 	p.end_location_x between 102 and 120
+-- 	or p.end_location_x between 0 and 18
+-- 	)
+-- and p.end_location_y between 18 and 62
+-- group by team_name
+-- order by count(p) desc;
