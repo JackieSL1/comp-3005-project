@@ -66,7 +66,8 @@ def load_database(cursor, conn):
     
     # Import the dbexport.sql database data into this database
     try:
-        command = f'psql -h {host} -U {user} -d {query_database_name} -a -f \'{os.path.join(dir_path, "dbexport.sql")}\''
+        command = f'psql -h {host} -U {user} -d {query_database_name} -a -f {os.path.join(dir_path, "dbexport.sql")}'
+        # command = f'psql -h {host} -U {user} -d {query_database_name} -a -f \'{os.path.join(dir_path, "dbexport.sql")}\''
         env = {'PGPASSWORD': password}
         subprocess.run(command, shell=True, check=True, env=env)
 
@@ -128,9 +129,8 @@ def get_time(cursor, conn, sql_query):
         else:
             print("Execution Time not found in EXPLAIN ANALYZE output.")
             return f"NA"
-    except Exception as e:
-        print(e)
-        print("[ERROR] Error getting time.")
+    except Exception as error:
+        print(f"[ERROR] Error getting time.\n{error}")
 
 
 # Write the results into some Q_n CSV. If the is an error with the query, it is a INC result - Do NOT Modify
@@ -183,7 +183,7 @@ def Q_1(cursor, conn, execution_time):
             where season_name = '2020/2021'
             and competition_name = 'La Liga'
             group by player_name
-            order by avg_xg desc;
+            order by avg_xg desc
             """
 
     #==========================================================================
@@ -217,7 +217,7 @@ def Q_2(cursor, conn, execution_time):
             where season_name = '2020/2021'
             and competition_name = 'La Liga'
             group by player_name
-            order by count(s) desc;
+            order by count(s) desc
             """
 
     #==========================================================================
@@ -256,7 +256,7 @@ def Q_3(cursor, conn, execution_time):
                 )
             and first_time = true
             group by player_name
-            order by count(s) desc;
+            order by count(s) desc
             """
 
     #==========================================================================
@@ -289,7 +289,7 @@ def Q_4(cursor, conn, execution_time):
             where season_name = '2020/2021'
             and competition_name = 'La Liga'
             group by team_name
-            order by count(p) desc;
+            order by count(p) desc
             """
 
     #==========================================================================
@@ -322,7 +322,7 @@ def Q_5(cursor, conn, execution_time):
             where season_name = '2003/2004'
             and competition_name = 'Premier League'
             group by player_name
-            order by count(pass) desc;
+            order by count(pass) desc
             """
 
     #==========================================================================
@@ -355,7 +355,7 @@ def Q_6(cursor, conn, execution_time):
             where season_name = '2003/2004'
             and competition_name = 'Premier League'
             group by team_name
-            order by count(s) desc;
+            order by count(s) desc
             """
 
     #==========================================================================
@@ -389,7 +389,7 @@ def Q_7(cursor, conn, execution_time):
             and competition_name = 'La Liga'
             and technique = 'Through Ball'
             group by player_name
-            order by count(pass) desc;
+            order by count(pass) desc
             """
 
     #==========================================================================
@@ -423,7 +423,7 @@ def Q_8(cursor, conn, execution_time):
             and competition_name = 'La Liga'
             and technique = 'Through Ball'
             group by team_name
-            order by count(pass) desc;
+            order by count(pass) desc
             """
 
     #==========================================================================
@@ -461,7 +461,7 @@ def Q_9(cursor, conn, execution_time):
                 )
             and d.outcome = 'Complete'
             group by player_name
-            order by count(d) desc;
+            order by count(d) desc
             """
 
     #==========================================================================
@@ -495,7 +495,7 @@ def Q_10(cursor, conn, execution_time):
             and season_name = '2020/2021'
             and t.name = 'dribbled_past'
             group by player_name
-            order by count(e) asc;
+            order by count(e) asc
             """
 
     #==========================================================================
